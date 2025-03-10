@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gabsfranca/gerador-nf-estoque/internal/handlers"
+	"github.com/gabsfranca/gerador-nf-estoque/internal/internalHandlers"
 	"github.com/gabsfranca/gerador-nf-estoque/internal/repository"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
@@ -32,18 +33,24 @@ func main() {
 	}
 
 	repo := repository.NewPostgresProductRepository(db)
-	handler := handlers.NewProductHandler(repo)
+	handler := internalHandlers.NewProductHandler(repo)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/products", handler.Create).Methods("POST")
-	router.HandleFunc("/products", handler.List).Methods("GET")
-	router.HandleFunc("/products/{id:[0-9]+}", handler.GetById).Methods("GET")
+	router.HandleFunc("/products", handler.GetProduts).Methods("GET")
+	router.HandleFunc("/products/{id:[0-9]+}", handler.GetProductById).Methods("GET")
 	router.HandleFunc("/products/serialNumber/{serialNumber}", handler.GetBySerialNumber).Methods("GET")
 	router.HandleFunc("/products/{id:[0-9]+}/stock", handler.UpdateStock).Methods("PUT")
 
+	corsOptions := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+	)
+
 	port := getEnv("PORT", "8080")
 	log.Printf("serviço de estoque iniciado com sucesso na porta %s", port)
-	log.Fatal(http.ListenAndServe(":"+port, router))
+	log.Fatal(http.ListenAndServe(":"+port, corsOptions(router)))
 }
 
 func getEnv(key, defaultValue string) string {

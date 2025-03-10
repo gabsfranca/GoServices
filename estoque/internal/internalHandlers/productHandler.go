@@ -1,7 +1,8 @@
-package handlers
+package internalHandlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -19,10 +20,13 @@ func NewProductHandler(repo repository.ProductRepository) *ProductHandler {
 }
 
 func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
+
 	var product domain.Product
 	err := json.NewDecoder(r.Body).Decode(&product)
+	fmt.Println("request: ", r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		fmt.Println("erro decodificando o json: ", err)
 		return
 	}
 
@@ -37,7 +41,8 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(product)
 }
 
-func (h *ProductHandler) GetById(w http.ResponseWriter, r *http.Request) {
+func (h *ProductHandler) GetProductById(w http.ResponseWriter, r *http.Request) {
+
 	vars := mux.Vars(r)
 	id, err := strconv.ParseInt(vars["id"], 10, 64)
 	if err != nil {
@@ -50,6 +55,7 @@ func (h *ProductHandler) GetById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProductHandler) GetBySerialNumber(w http.ResponseWriter, r *http.Request) {
+
 	vars := mux.Vars(r)
 	serialNumber := vars["serialNumber"]
 
@@ -70,6 +76,7 @@ type StockUpdateRequest struct {
 }
 
 func (h *ProductHandler) UpdateStock(w http.ResponseWriter, r *http.Request) {
+
 	vars := mux.Vars(r)
 	id, err := strconv.ParseInt(vars["id"], 10, 64)
 	if err != nil {
@@ -98,8 +105,9 @@ func (h *ProductHandler) UpdateStock(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"message":"Stock updated successfully"}`))
 }
 
-func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
-	products, err := h.repo.List(r.Context())
+func (h *ProductHandler) GetProduts(w http.ResponseWriter, r *http.Request) {
+
+	products, err := h.repo.GetProduts(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
