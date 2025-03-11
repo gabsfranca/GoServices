@@ -24,9 +24,9 @@ func (r *postgresProductRepository) Create(ctx context.Context, product *domain.
 	}
 
 	query := `
-		INSERT INTO produtos (codigo, nome, description, preco, estoque_atual)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, created_at, updated_at
+		INSERT INTO products (serial_number, name, description, price)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, created_at
 	`
 
 	err := r.db.QueryRowContext(
@@ -36,16 +36,15 @@ func (r *postgresProductRepository) Create(ctx context.Context, product *domain.
 		product.Name,
 		product.Description,
 		product.Price,
-		product.CurrentStock,
-	).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt)
+	).Scan(&product.ID, &product.CreatedAt)
 
 	return err
 }
 
 func (r *postgresProductRepository) GetProductById(ctx context.Context, id int64) (*domain.Product, error) {
 	query := `
-		SELECT id, codigo, nome, description, preco, estoque_atual, created_at, updated_at
-		FROM produtos
+		SELECT id, serial_number, name, description, price, current_stock, created_at
+		FROM products
 		WHERE id = $1
 	`
 
@@ -58,7 +57,6 @@ func (r *postgresProductRepository) GetProductById(ctx context.Context, id int64
 		&product.Price,
 		&product.CurrentStock,
 		&product.CreatedAt,
-		&product.UpdatedAt,
 	)
 
 	if err != nil {
@@ -72,9 +70,9 @@ func (r *postgresProductRepository) GetProductById(ctx context.Context, id int64
 
 func (r *postgresProductRepository) GetBySerialNumber(ctx context.Context, serialNumber string) (*domain.Product, error) {
 	query := `
-		SELECT id, codigo, nome, description, preco, estoque_atual, created_at, updated_at
-		FROM produtos
-		WHERE codigo = $1
+		SELECT id, serial_number, name, description, price, current_stock, created_at
+		FROM products
+		WHERE serial_number = $1
 	`
 
 	product := &domain.Product{}
@@ -86,7 +84,6 @@ func (r *postgresProductRepository) GetBySerialNumber(ctx context.Context, seria
 		&product.Price,
 		&product.CurrentStock,
 		&product.CreatedAt,
-		&product.UpdatedAt,
 	)
 
 	if err != nil {
@@ -98,69 +95,10 @@ func (r *postgresProductRepository) GetBySerialNumber(ctx context.Context, seria
 	return product, nil
 }
 
-func (r *postgresProductRepository) UpdateStock(
-	ctx context.Context,
-	id int64,
-	quantity int,
-	movementType string,
-	invoiceID string,
-) error {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	defer tx.Rollback()
-
-	var currentStock int
-	stockQuery := "SELECT current_stock FROM produtos WHERE id = $1 FOR UPDATE"
-	err = tx.QueryRowContext(ctx, stockQuery, id).Scan(&currentStock)
-	if err != nil {
-		return err
-	}
-
-	var newStock int
-	if movementType == "IN" {
-		newStock = currentStock + quantity
-	} else if movementType == "OUT" {
-		if currentStock < quantity {
-			return errors.New("ESTOQUE INSUFICIENTE")
-		}
-
-		newStock = currentStock - quantity
-	} else {
-		return errors.New("invalid movement type")
-	}
-
-	updateQuery := `
-		UPDATE produtos
-		SET current_stock = $1, updated_at = NOW()
-		WHERE id = $2
-	`
-
-	_, err = tx.ExecContext(ctx, updateQuery, newStock, id)
-	if err != nil {
-		return err
-	}
-
-	movementQuery := `
-		INSERT INTO stock_movements (product_id, quantity, movement_type, invoice_id)
-		VALUES ($1, $2, $3, $4)
-	`
-
-	_, err = tx.ExecContext(ctx, movementQuery, id, quantity, movementType, invoiceID)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit()
-
-}
-
 func (r *postgresProductRepository) GetProduts(ctx context.Context) ([]*domain.Product, error) {
 	query := `
-		SELECT id, codigo, nome, description, preco, estoque_atual, created_at, updated_at
-		FROM produtos
+		SELECT id, serial_number, name, description, price, current_stock, created_at
+		FROM products
 		ORDER BY name
 	`
 
@@ -181,7 +119,6 @@ func (r *postgresProductRepository) GetProduts(ctx context.Context) ([]*domain.P
 			&product.Price,
 			&product.CurrentStock,
 			&product.CreatedAt,
-			&product.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err

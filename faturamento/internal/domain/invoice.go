@@ -12,7 +12,7 @@ type Invoice struct {
 
 type InvoiceItem struct {
 	Id           int64   `json:"id"`
-	InoiceId     int64   `json:"invoiceId"`
+	InvoiceId    int64   `json:"invoiceId"`
 	SerialNumber string  `json:"serialNumer"`
 	Quantity     float64 `json:"quantity"`
 	Price        float64 `json:"price"`

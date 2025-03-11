@@ -12,7 +12,6 @@ type Product struct {
 	Price        float64   `json:"price"`
 	CurrentStock int       `json:"currentStock"`
 	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type StockMovements struct {

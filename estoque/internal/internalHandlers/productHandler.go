@@ -69,42 +69,6 @@ func (h *ProductHandler) GetBySerialNumber(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(product)
 }
 
-type StockUpdateRequest struct {
-	Quantity     int    `json:"quantity"`
-	MovementType string `json:"movement_type"`
-	InvoiceId    string `json:"invoice_id, omitempty"`
-}
-
-func (h *ProductHandler) UpdateStock(w http.ResponseWriter, r *http.Request) {
-
-	vars := mux.Vars(r)
-	id, err := strconv.ParseInt(vars["id"], 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid product ID", http.StatusBadRequest)
-		return
-	}
-
-	var req StockUpdateRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = h.repo.UpdateStock(r.Context(), id, req.Quantity, req.MovementType, req.InvoiceId)
-	if err != nil {
-		if err.Error() == "insuficient stock" {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"Stock updated successfully"}`))
-}
-
 func (h *ProductHandler) GetProduts(w http.ResponseWriter, r *http.Request) {
 
 	products, err := h.repo.GetProduts(r.Context())

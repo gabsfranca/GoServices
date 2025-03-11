@@ -18,7 +18,7 @@ func main() {
 	dbPort := getEnv("DB_PORT", "5432")
 	dbUser := getEnv("DB_USER", "postgres")
 	dbPass := getEnv("DB_PASS", "senha")
-	dbName := getEnv("DB_NAME", "gerador_nf_estoque")
+	dbName := getEnv("DB_NAME", "products_service_db")
 
 	connStr := "postgres://" + dbUser + ":" + dbPass + "@" + dbHost + ":" + dbPort + "/" + dbName + "?sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
@@ -40,7 +40,6 @@ func main() {
 	router.HandleFunc("/products", handler.GetProduts).Methods("GET")
 	router.HandleFunc("/products/{id:[0-9]+}", handler.GetProductById).Methods("GET")
 	router.HandleFunc("/products/serialNumber/{serialNumber}", handler.GetBySerialNumber).Methods("GET")
-	router.HandleFunc("/products/{id:[0-9]+}/stock", handler.UpdateStock).Methods("PUT")
 
 	corsOptions := handlers.CORS(
 		handlers.AllowedOrigins([]string{"*"}),
