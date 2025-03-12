@@ -16,9 +16,9 @@ func NewPostgresProductRepository(db *sql.DB) ProductRepository {
 	return &postgresProductRepository{db: db}
 }
 
-func (r *postgresProductRepository) Create(ctx context.Context, product *domain.Product) error {
+func (r *postgresProductRepository) Create(ctx context.Context, p *domain.Product) error {
 
-	existingProduct, _ := r.GetBySerialNumber(ctx, product.SerialNumber)
+	existingProduct, _ := r.GetBySerialNumber(ctx, p.SerialNumber)
 	if existingProduct != nil {
 		return errors.New("produto já cadastrado")
 	}
@@ -32,11 +32,11 @@ func (r *postgresProductRepository) Create(ctx context.Context, product *domain.
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
-		product.SerialNumber,
-		product.Name,
-		product.Description,
-		product.Price,
-	).Scan(&product.ID, &product.CreatedAt)
+		p.SerialNumber,
+		p.Name,
+		p.Description,
+		p.Price,
+	).Scan(&p.ID, &p.CreatedAt)
 
 	return err
 }
@@ -132,4 +132,15 @@ func (r *postgresProductRepository) GetProduts(ctx context.Context) ([]*domain.P
 
 	return products, nil
 
+}
+
+func (r *postgresProductRepository) UpdateStock(ctx context.Context, id int64, newStock int) error {
+	query := `
+		UPDATE products
+		SET current_stock = $1
+		WHERE id = $2;
+	`
+
+	_, err := r.db.ExecContext(ctx, query, newStock, id)
+	return err
 }

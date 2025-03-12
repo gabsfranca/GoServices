@@ -40,6 +40,43 @@ func (h *InvoiceHandler) CreateInvoice(w http.ResponseWriter, r *http.Request) {
 
 	invoice.Status = "aberta"
 
+	if invoice.Type == "OUT" {
+		for _, item := range invoice.Products {
+
+			url := fmt.Sprintf("%s/products/serialNumber/%s", h.productServiceURL, item.SerialNumber)
+
+			res, err := h.httpClient.Get(url)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			if res.StatusCode != http.StatusOK {
+				body, _ := io.ReadAll(res.Body)
+				http.Error(w, string(body), res.StatusCode)
+				return
+			}
+
+			var product struct {
+				CurrentStock int `json:"currentStock"`
+			}
+
+			if err := json.NewDecoder(res.Body).Decode(&product); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			if product.CurrentStock < int(item.Quantity) {
+				http.Error(
+					w,
+					fmt.Sprintf("estoque insuficiente para o produto %s", item.SerialNumber),
+					http.StatusBadRequest,
+				)
+				return
+			}
+		}
+	}
+
 	if err := h.repo.CreateInvoice(r.Context(), &invoice); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -40,6 +40,7 @@ func main() {
 	router.HandleFunc("/products", handler.GetProduts).Methods("GET")
 	router.HandleFunc("/products/{id:[0-9]+}", handler.GetProductById).Methods("GET")
 	router.HandleFunc("/products/serialNumber/{serialNumber}", handler.GetBySerialNumber).Methods("GET")
+	router.HandleFunc("/products/{serialNumber}/update-stock", handler.UpdateStock).Methods("PUT")
 
 	corsOptions := handlers.CORS(
 		handlers.AllowedOrigins([]string{"*"}),

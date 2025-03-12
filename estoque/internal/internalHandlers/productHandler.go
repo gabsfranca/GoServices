@@ -80,3 +80,41 @@ func (h *ProductHandler) GetProduts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(products)
 }
+
+func (h *ProductHandler) UpdateStock(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	serialNumber := vars["serialNumber"]
+
+	var request struct {
+		Delta int `json:"delta"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	product, err := h.repo.GetBySerialNumber(r.Context(), serialNumber)
+
+	if err != nil {
+		http.Error(w, "produto nao encontrado", http.StatusNotFound)
+		return
+	}
+
+	newStock := product.CurrentStock + request.Delta
+
+	if newStock < 0 {
+		http.Error(w, "estoque insuficiente", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.repo.UpdateStock(r.Context(), product.ID, newStock); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(struct {
+		NewStock int `json:"newStock"`
+	}{NewStock: newStock})
+}
