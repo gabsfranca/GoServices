@@ -54,12 +54,12 @@ func (h *ProductHandler) GetProductById(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(id)
 }
 
-func (h *ProductHandler) GetBySerialNumber(w http.ResponseWriter, r *http.Request) {
+func (h *ProductHandler) GetProductBySerialNumber(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	serialNumber := vars["serialNumber"]
 
-	product, err := h.repo.GetBySerialNumber(r.Context(), serialNumber)
+	product, err := h.repo.GetProductBySerialNumber(r.Context(), serialNumber)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -93,7 +93,7 @@ func (h *ProductHandler) UpdateStock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product, err := h.repo.GetBySerialNumber(r.Context(), serialNumber)
+	product, err := h.repo.GetProductBySerialNumber(r.Context(), serialNumber)
 
 	if err != nil {
 		http.Error(w, "produto nao encontrado", http.StatusNotFound)

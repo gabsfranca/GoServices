@@ -18,7 +18,7 @@ func NewPostgresProductRepository(db *sql.DB) ProductRepository {
 
 func (r *postgresProductRepository) Create(ctx context.Context, p *domain.Product) error {
 
-	existingProduct, _ := r.GetBySerialNumber(ctx, p.SerialNumber)
+	existingProduct, _ := r.GetProductBySerialNumber(ctx, p.SerialNumber)
 	if existingProduct != nil {
 		return errors.New("produto já cadastrado")
 	}
@@ -26,7 +26,7 @@ func (r *postgresProductRepository) Create(ctx context.Context, p *domain.Produc
 	query := `
 		INSERT INTO products (serial_number, name, description, price)
 		VALUES ($1, $2, $3, $4)
-		RETURNING id, created_at
+		RETURNING id
 	`
 
 	err := r.db.QueryRowContext(
@@ -36,14 +36,14 @@ func (r *postgresProductRepository) Create(ctx context.Context, p *domain.Produc
 		p.Name,
 		p.Description,
 		p.Price,
-	).Scan(&p.ID, &p.CreatedAt)
+	).Scan(&p.ID)
 
 	return err
 }
 
 func (r *postgresProductRepository) GetProductById(ctx context.Context, id int64) (*domain.Product, error) {
 	query := `
-		SELECT id, serial_number, name, description, price, current_stock, created_at
+		SELECT id, serial_number, name, description, price, current_stock
 		FROM products
 		WHERE id = $1
 	`
@@ -56,7 +56,6 @@ func (r *postgresProductRepository) GetProductById(ctx context.Context, id int64
 		&product.Description,
 		&product.Price,
 		&product.CurrentStock,
-		&product.CreatedAt,
 	)
 
 	if err != nil {
@@ -68,9 +67,9 @@ func (r *postgresProductRepository) GetProductById(ctx context.Context, id int64
 	return product, nil
 }
 
-func (r *postgresProductRepository) GetBySerialNumber(ctx context.Context, serialNumber string) (*domain.Product, error) {
+func (r *postgresProductRepository) GetProductBySerialNumber(ctx context.Context, serialNumber string) (*domain.Product, error) {
 	query := `
-		SELECT id, serial_number, name, description, price, current_stock, created_at
+		SELECT id, serial_number, name, description, price, current_stock
 		FROM products
 		WHERE serial_number = $1
 	`
@@ -83,7 +82,6 @@ func (r *postgresProductRepository) GetBySerialNumber(ctx context.Context, seria
 		&product.Description,
 		&product.Price,
 		&product.CurrentStock,
-		&product.CreatedAt,
 	)
 
 	if err != nil {
@@ -97,7 +95,7 @@ func (r *postgresProductRepository) GetBySerialNumber(ctx context.Context, seria
 
 func (r *postgresProductRepository) GetProduts(ctx context.Context) ([]*domain.Product, error) {
 	query := `
-		SELECT id, serial_number, name, description, price, current_stock, created_at
+		SELECT id, serial_number, name, description, price, current_stock
 		FROM products
 		ORDER BY name
 	`
@@ -118,7 +116,6 @@ func (r *postgresProductRepository) GetProduts(ctx context.Context) ([]*domain.P
 			&product.Description,
 			&product.Price,
 			&product.CurrentStock,
-			&product.CreatedAt,
 		)
 		if err != nil {
 			return nil, err
